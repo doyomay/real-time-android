@@ -20,6 +20,7 @@ import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.inputmethod.EditorInfo;
+import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ImageButton;
 import android.widget.TextView;
@@ -92,6 +93,7 @@ public class MainFragment extends Fragment {
         mSocket.on("user left", onUserLeft);
         mSocket.on("typing", onTyping);
         mSocket.on("stop typing", onStopTyping);
+        mSocket.on("upload_success", onUploadFile);
         mSocket.connect();
 
         startSignIn();
@@ -168,6 +170,14 @@ public class MainFragment extends Fragment {
             @Override
             public void onClick(View v) {
                 attemptSend();
+            }
+        });
+
+        Button uploadButton = view.findViewById(R.id.upload_button);
+        uploadButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                addLog("Khe berga!");
             }
         });
     }
@@ -339,6 +349,37 @@ public class MainFragment extends Fragment {
                     try {
                         username = data.getString("username");
                         message = data.getString("message");
+                    } catch (JSONException e) {
+                        Log.e(TAG, e.getMessage());
+                        return;
+                    }
+
+                    removeTyping(username);
+                    addMessage(username, message);
+                }
+            });
+        }
+    };
+
+    private Emitter.Listener onUploadFile = new Emitter.Listener() {
+        @Override
+        public void call(final Object... args) {
+            getActivity().runOnUiThread(new Runnable() {
+                @Override
+                public void run() {
+                    JSONObject data = (JSONObject) args[0];
+                    String username;
+                    String message;
+                    String type;
+                    String url;
+                    try {
+                        message = "";
+                        username = data.getString("username");
+                        type = data.getString("type");
+                        url = data.getString("url");
+                        if(type.equals("image")) {
+                            message = "Se subio una imagen " + url;
+                        }
                     } catch (JSONException e) {
                         Log.e(TAG, e.getMessage());
                         return;
